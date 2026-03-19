@@ -7,6 +7,7 @@ export type AdminMacroModuleKey =
 
 export type AdminSubmoduleKey =
   | "dashboard"
+  | "perfil"
   | "productos"
   | "traslados"
   | "bodegas"
@@ -25,34 +26,34 @@ export type AdminSubmoduleItem = {
   key: AdminSubmoduleKey;
   label: string;
   icon:
-    | "home-outline"
-    | "cube-outline"
-    | "swap-horizontal-outline"
-    | "business-outline"
-    | "people-outline"
-    | "document-text-outline"
-    | "receipt-outline"
-    | "cart-outline"
-    | "wallet-outline"
-    | "shield-outline";
+  | "home-outline"
+  | "cube-outline"
+  | "swap-horizontal-outline"
+  | "business-outline"
+  | "people-outline"
+  | "document-text-outline"
+  | "receipt-outline"
+  | "cart-outline"
+  | "wallet-outline"
+  | "shield-outline";
 };
 
 export const adminMacroModules: {
   key: AdminMacroModuleKey;
   label: string;
   icon:
-    | "home-outline"
-    | "cube-outline"
-    | "cart-outline"
-    | "receipt-outline"
-    | "settings-outline";
+  | "home-outline"
+  | "cube-outline"
+  | "cart-outline"
+  | "receipt-outline"
+  | "settings-outline";
 }[] = [
-  { key: "dashboard", label: "Inicio", icon: "home-outline" },
-  { key: "existencias", label: "Existencias", icon: "cube-outline" },
-  { key: "compras", label: "Compras", icon: "cart-outline" },
-  { key: "ventas", label: "Ventas", icon: "receipt-outline" },
-  { key: "administracion", label: "Admin", icon: "settings-outline" },
-];
+    { key: "dashboard", label: "Inicio", icon: "home-outline" },
+    { key: "existencias", label: "Existencias", icon: "cube-outline" },
+    { key: "compras", label: "Compras", icon: "cart-outline" },
+    { key: "ventas", label: "Ventas", icon: "receipt-outline" },
+    { key: "administracion", label: "Admin", icon: "settings-outline" },
+  ];
 
 export const adminSubmodulesByMacro: Record<
   AdminMacroModuleKey,

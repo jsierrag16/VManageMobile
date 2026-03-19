@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { BodegaOption, BodegaContextOption } from "../types/bodega.types";
+import type { BodegaContextOption, BodegaOption } from "../types/bodega.types";
 
 type BodegaState = {
   bodegas: BodegaOption[];

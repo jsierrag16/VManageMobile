@@ -1,6 +1,12 @@
-import { useState } from "react";
-import { Redirect, useRouter, type Href } from "expo-router";
 import { typography } from "@/core/theme/typography";
+import BodegasScreen from "@/modules/existencias/bodegas/screens/BodegaScreen";
+import ProductosScreen from "@/modules/existencias/productos/screens/ProductosScreen";
+import ProfileScreen from "@/modules/profile/screens/ProfileScreen";
+import TrasladosScreen from "@/modules/existencias/traslados/screens/TrasladoScreen";
+import RolesScreen from "@/modules/configuracion/roles/screens/RolesScreen";
+import UsuariosScreen from "@/modules/usuarios/screens/UsuariosScreen";
+import { Redirect, useRouter, type Href } from "expo-router";
+import { useState } from "react";
 import {
   SafeAreaView,
   ScrollView,
@@ -11,14 +17,14 @@ import {
 
 import AppHeader from "@/components/layout/AppHeader";
 import BottomNav from "@/components/layout/BottomNav";
-import BrandLoader from "@/components/ui/BrandLoader";
 import AppCard from "@/components/ui/AppCard";
 import AppStatCard from "@/components/ui/AppStatCard";
+import BrandLoader from "@/components/ui/BrandLoader";
 
-import { useAuthStore } from "@/modules/auth/store/auth.store";
-import { clearAccessToken } from "@/core/storage/session";
 import { setAccessToken } from "@/core/api/http";
-import { useBodegaStore } from "@/modules/bodega/store/bodega.store";
+import { removeAccessToken } from "@/core/storage/session";
+import { useAuthStore } from "@/modules/auth/store/auth.store";
+import { useBodegaStore } from "@/modules/existencias/bodegas/store/bodega.store";
 
 import { colors } from "@/core/theme/colors";
 import type {
@@ -49,7 +55,7 @@ export default function HomeScreen() {
   const handleLogout = async () => {
     setIsLoggingOut(true);
 
-    await clearAccessToken();
+    await removeAccessToken();
     setAccessToken(null);
     clearAuth();
     useBodegaStore.getState().clearBodegaContext();
@@ -62,7 +68,7 @@ export default function HomeScreen() {
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Dashboard</Text>
         <Text style={styles.sectionSubtitle}>
-          Bodega seleccionada: {selectedBodegaLabel}
+          Datos estadísticos de VetManage
         </Text>
       </View>
 
@@ -133,22 +139,17 @@ export default function HomeScreen() {
         return renderDashboard();
 
       case "productos":
-        return renderModulePlaceholder(
-          "Productos",
-          "Aquí conectaremos el catálogo de productos y su comportamiento con existencias por bodega."
-        );
+        return <ProductosScreen />;
 
-      case "traslados":
-        return renderModulePlaceholder(
-          "Traslados",
-          "Aquí irá el listado de traslados, usando el contexto global de bodega y permisos del usuario."
-        );
+      case "perfil":
+        return <ProfileScreen />;
 
       case "bodegas":
-        return renderModulePlaceholder(
-          "Bodegas",
-          "Aquí se visualizarán las bodegas del sistema en modo solo lectura para administrador."
-        );
+        return <BodegasScreen />;
+
+      case "traslados":
+        return <TrasladosScreen />;
+
 
       case "proveedores":
         return renderModulePlaceholder(
@@ -199,16 +200,10 @@ export default function HomeScreen() {
         );
 
       case "roles":
-        return renderModulePlaceholder(
-          "Roles",
-          "Aquí se mostrará el módulo de roles del sistema."
-        );
+        return <RolesScreen />;
 
       case "usuarios":
-        return renderModulePlaceholder(
-          "Usuarios",
-          "Aquí se mostrará el módulo de usuarios, y luego podremos evaluar acciones puntuales como restablecer contraseña."
-        );
+        return <UsuariosScreen />;
 
       default:
         return renderDashboard();
@@ -222,7 +217,17 @@ export default function HomeScreen() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          <AppHeader onLogout={handleLogout} />
+          <AppHeader
+            onLogout={handleLogout}
+            onOpenProfile={() => {
+              setCurrentMacro("administracion");
+              setCurrentSubmodule("perfil");
+            }}
+            onGoHome={() => {
+              setCurrentMacro("dashboard");
+              setCurrentSubmodule("dashboard");
+            }}
+          />
           {renderCurrentContent()}
         </ScrollView>
 
@@ -244,7 +249,7 @@ export default function HomeScreen() {
 
         {isLoggingOut ? (
           <View style={styles.loadingOverlay}>
-            <BrandLoader text="Cerrando sesión..." fullscreen={false} />
+            <BrandLoader text="" fullscreen={false} />
           </View>
         ) : null}
       </View>

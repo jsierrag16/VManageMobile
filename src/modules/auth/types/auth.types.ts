@@ -17,6 +17,16 @@ export type Rol = {
   estado: boolean;
 };
 
+export type TipoDocumento = {
+  id_tipo_doc: number;
+  nombre_doc: string;
+} | null;
+
+export type Genero = {
+  id_genero: number;
+  nombre_genero: string;
+} | null;
+
 export type AuthUser = {
   id_usuario: number;
   nombre: string;
@@ -35,6 +45,8 @@ export type AuthUser = {
   roles: Rol;
   bodegas: Bodega[];
   permisos: Permiso[];
+  tipo_documento?: TipoDocumento;
+  genero?: Genero;
 };
 
 export type LoginPayload = {

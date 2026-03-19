@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { getAccessToken } from "@/core/storage/session";
+import { getAccessToken, removeAccessToken } from "@/core/storage/session";
 import { getMeRequest } from "@/modules/auth/services/auth.service";
-import { useBodegaStore } from "@/modules/bodega/store/bodega.store";
+import { useBodegaStore } from "@/modules/existencias/bodegas/store/bodega.store";
+import { useMutation } from "@tanstack/react-query";
+import axios from "axios";
+import { useRouter, type Href } from "expo-router";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator,
   Animated,
   Easing,
   Image,
@@ -15,18 +17,15 @@ import {
   StyleSheet,
   Text,
   View,
-  useWindowDimensions,
+  useWindowDimensions
 } from "react-native";
-import { useRouter, type Href } from "expo-router";
-import { useMutation } from "@tanstack/react-query";
-import axios from "axios";
 
+import AuthInput from "@/components/ui/AuthInput";
+import BrandLoader from "@/components/ui/BrandLoader";
+import { setAccessToken } from "@/core/api/http";
+import { saveAccessToken } from "@/core/storage/session";
 import { loginRequest, requestPasswordReset } from "@/modules/auth/services/auth.service";
 import { useAuthStore } from "@/modules/auth/store/auth.store";
-import { saveAccessToken } from "@/core/storage/session";
-import { setAccessToken } from "@/core/api/http";
-import BrandLoader from "@/components/ui/BrandLoader";
-import AuthInput from "@/components/ui/AuthInput";
 
 function getErrorMessage(error: unknown) {
   if (axios.isAxiosError(error)) {
@@ -50,7 +49,8 @@ export default function AuthScreen() {
   const router = useRouter();
   const { height } = useWindowDimensions();
   const setAuth = useAuthStore((state) => state.setAuth);
-  
+  const clearAuth = useAuthStore((state) => state.clearAuth);
+
   const initializeBodegaContext = useBodegaStore(
     (state) => state.initializeBodegaContext
   );
@@ -78,13 +78,19 @@ export default function AuthScreen() {
   const heroOpacity = useRef(new Animated.Value(1)).current;
   const overlayOpacity = useRef(new Animated.Value(0.34)).current;
 
+
   useEffect(() => {
     const bootstrap = async () => {
       try {
-        const token = await getAccessToken();
+        const rawToken = await getAccessToken();
+        const token =
+          typeof rawToken === "string"
+            ? rawToken.replace(/^"|"$/g, "").trim()
+            : null;
 
-        if (!token) {
-          setIsBooting(false);
+        if (!token || token === "null" || token === "undefined") {
+          setAccessToken(null);
+          clearAuth();
           return;
         }
 
@@ -98,18 +104,18 @@ export default function AuthScreen() {
         });
 
         initializeBodegaContext(user.bodegas ?? []);
-
         router.replace("/home" as Href);
-        return;
       } catch (error) {
         setAccessToken(null);
+        await removeAccessToken();
+        clearAuth();
+      } finally {
         setIsBooting(false);
-        return;
       }
     };
 
     bootstrap();
-  }, [initializeBodegaContext, router, setAuth]);
+  }, [clearAuth, initializeBodegaContext, router, setAuth]);
 
   useEffect(() => {
     if (!isSheetOpen) {

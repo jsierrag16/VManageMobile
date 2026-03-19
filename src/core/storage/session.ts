@@ -20,7 +20,7 @@ export async function getAccessToken() {
   return SecureStore.getItemAsync(ACCESS_TOKEN_KEY);
 }
 
-export async function clearAccessToken() {
+export async function removeAccessToken() {
   if (Platform.OS === "web") {
     localStorage.removeItem(ACCESS_TOKEN_KEY);
     return;

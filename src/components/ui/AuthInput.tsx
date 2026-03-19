@@ -22,6 +22,7 @@ type AuthInputProps = {
   keyboardType?: KeyboardTypeOptions;
   autoCapitalize?: "none" | "sentences" | "words" | "characters";
   error?: string;
+  editable?: boolean;
 };
 
 export default function AuthInput({
@@ -36,6 +37,7 @@ export default function AuthInput({
   keyboardType = "default",
   autoCapitalize = "sentences",
   error,
+  editable = true,
 }: AuthInputProps) {
   const hasError = !!error;
 
@@ -43,7 +45,13 @@ export default function AuthInput({
     <View style={styles.wrapper}>
       <Text style={styles.label}>{label}</Text>
 
-      <View style={[styles.inputContainer, hasError && styles.inputContainerError]}>
+      <View
+        style={[
+          styles.inputContainer,
+          hasError && styles.inputContainerError,
+          !editable && styles.inputContainerDisabled,
+        ]}
+      >
         <Ionicons
           name={leftIconName}
           size={20}
@@ -52,7 +60,7 @@ export default function AuthInput({
         />
 
         <TextInput
-          style={styles.input}
+          style={[styles.input, !editable && styles.inputDisabled]}
           placeholder={placeholder}
           placeholderTextColor="#8A94A6"
           value={value}
@@ -60,6 +68,9 @@ export default function AuthInput({
           secureTextEntry={secureTextEntry}
           keyboardType={keyboardType}
           autoCapitalize={autoCapitalize}
+          editable={editable}
+          selectTextOnFocus={editable}
+          showSoftInputOnFocus={editable}
         />
 
         {rightIconName ? (
@@ -102,6 +113,10 @@ const styles = StyleSheet.create({
   inputContainerError: {
     borderColor: "#FF4D4F",
   },
+  inputContainerDisabled: {
+    backgroundColor: "#F7F8FA",
+    opacity: 0.92,
+  },
   leftIcon: {
     marginRight: 10,
   },
@@ -113,6 +128,9 @@ const styles = StyleSheet.create({
     color: "#111827",
     fontSize: 16,
     paddingVertical: 14,
+  },
+  inputDisabled: {
+    color: "#9CA3AF",
   },
   errorText: {
     marginTop: 8,

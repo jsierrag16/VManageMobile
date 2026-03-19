@@ -6,6 +6,7 @@ type AuthState = {
   accessToken: string | null;
   isAuthenticated: boolean;
   setAuth: (payload: { usuario: AuthUser; accessToken: string }) => void;
+  updateUsuario: (usuario: AuthUser) => void;
   clearAuth: () => void;
 };
 
@@ -20,6 +21,13 @@ export const useAuthStore = create<AuthState>((set) => ({
       accessToken,
       isAuthenticated: true,
     }),
+
+  updateUsuario: (usuario) =>
+    set((state) => ({
+      usuario,
+      accessToken: state.accessToken,
+      isAuthenticated: true,
+    })),
 
   clearAuth: () =>
     set({

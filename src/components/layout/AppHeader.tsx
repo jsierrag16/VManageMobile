@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useMemo, useState } from "react";
 import {
   Image,
@@ -7,20 +8,25 @@ import {
   Text,
   View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 
-import { useAuthStore } from "@/modules/auth/store/auth.store";
-import { useBodegaStore } from "@/modules/bodega/store/bodega.store";
 import { colors } from "@/core/theme/colors";
 import { radius } from "@/core/theme/radius";
 import { shadows } from "@/core/theme/shadows";
 import { typography } from "@/core/theme/typography";
+import { useAuthStore } from "@/modules/auth/store/auth.store";
+import { useBodegaStore } from "@/modules/existencias/bodegas/store/bodega.store";
 
 type AppHeaderProps = {
   onLogout: () => void;
+  onOpenProfile: () => void;
+  onGoHome: () => void;
 };
 
-export default function AppHeader({ onLogout }: AppHeaderProps) {
+export default function AppHeader({
+  onLogout,
+  onOpenProfile,
+  onGoHome,
+}: AppHeaderProps) {
   const usuario = useAuthStore((state) => state.usuario);
 
   const {
@@ -46,13 +52,13 @@ export default function AppHeader({ onLogout }: AppHeaderProps) {
       <View style={styles.wrapper}>
         <View style={styles.topRow}>
           <View style={styles.leftBlock}>
-            <View style={styles.logoBox}>
+            <Pressable style={styles.logoBox} onPress={onGoHome}>
               <Image
                 source={require("../../../assets/images/logo-v-icon.png")}
                 style={styles.logoIcon}
                 resizeMode="contain"
               />
-            </View>
+            </Pressable>
 
             <Pressable
               style={styles.bodegaSelector}
@@ -90,7 +96,15 @@ export default function AppHeader({ onLogout }: AppHeaderProps) {
             onPress={() => setIsProfileModalOpen(true)}
           >
             <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{initials || "VM"}</Text>
+              {usuario?.img_url ? (
+                <Image
+                  source={{ uri: usuario.img_url }}
+                  style={styles.avatarImage}
+                  resizeMode="cover"
+                />
+              ) : (
+                <Text style={styles.avatarText}>{initials || "VM"}</Text>
+              )}
             </View>
           </Pressable>
         </View>
@@ -148,7 +162,7 @@ export default function AppHeader({ onLogout }: AppHeaderProps) {
                   style={[
                     styles.optionText,
                     selectedBodegaId === bodega.id_bodega &&
-                      styles.optionTextActive,
+                    styles.optionTextActive,
                   ]}
                 >
                   {bodega.nombre_bodega}
@@ -173,7 +187,15 @@ export default function AppHeader({ onLogout }: AppHeaderProps) {
 
           <View style={styles.profileCard}>
             <View style={styles.profileAvatar}>
-              <Text style={styles.profileAvatarText}>{initials || "VM"}</Text>
+              {usuario?.img_url ? (
+                <Image
+                  source={{ uri: usuario.img_url }}
+                  style={styles.profileAvatarImage}
+                  resizeMode="cover"
+                />
+              ) : (
+                <Text style={styles.profileAvatarText}>{initials || "VM"}</Text>
+              )}
             </View>
 
             <Text style={styles.profileName}>
@@ -191,7 +213,13 @@ export default function AppHeader({ onLogout }: AppHeaderProps) {
               <Text style={styles.profileInfoValue}>{selectedBodegaLabel}</Text>
             </View>
 
-            <Pressable style={styles.secondaryActionButton}>
+            <Pressable
+              style={styles.secondaryActionButton}
+              onPress={() => {
+                setIsProfileModalOpen(false);
+                onOpenProfile();
+              }}
+            >
               <Ionicons
                 name="create-outline"
                 size={18}
@@ -286,7 +314,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     alignItems: "center",
     justifyContent: "center",
+    overflow: "hidden",
     ...shadows.card,
+  },
+  avatarImage: {
+    width: "100%",
+    height: "100%",
+    borderRadius: radius.full,
   },
   avatarText: {
     color: colors.white,
@@ -356,6 +390,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 14,
+    overflow: "hidden",
+  },
+  profileAvatarImage: {
+    width: "100%",
+    height: "100%",
+    borderRadius: radius.full,
   },
   profileAvatarText: {
     color: colors.white,
