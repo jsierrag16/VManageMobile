@@ -5,7 +5,10 @@ import ProfileScreen from "@/modules/profile/screens/ProfileScreen";
 import TrasladosScreen from "@/modules/existencias/traslados/screens/TrasladoScreen";
 import RolesScreen from "@/modules/configuracion/roles/screens/RolesScreen";
 import UsuariosScreen from "@/modules/usuarios/screens/UsuariosScreen";
+import ProveedoresScreen from "@/modules/compras/proveedores/screens/proveedoresScreen";
 import { Redirect, useRouter, type Href } from "expo-router";
+import OrdenesCompraScreen from "@/modules/compras/ordenes-compra/screens/ordenCompraScreen";
+import RemisionesCompraScreen from "@/modules/compras/remisiones-compra/screens/remisionCompraScreen";
 import { useState } from "react";
 import {
   SafeAreaView,
@@ -152,22 +155,13 @@ export default function HomeScreen() {
 
 
       case "proveedores":
-        return renderModulePlaceholder(
-          "Proveedores",
-          "Aquí se mostrará el módulo de proveedores en vista administrativa."
-        );
+        return <ProveedoresScreen />;
 
       case "ordenes_compra":
-        return renderModulePlaceholder(
-          "Órdenes de compra",
-          "Aquí conectaremos el listado de órdenes de compra."
-        );
+        return <OrdenesCompraScreen />;
 
       case "remisiones_compra":
-        return renderModulePlaceholder(
-          "Remisiones de compra",
-          "Aquí conectaremos el listado de remisiones de compra."
-        );
+        return <RemisionesCompraScreen />
 
       case "clientes":
         return renderModulePlaceholder(

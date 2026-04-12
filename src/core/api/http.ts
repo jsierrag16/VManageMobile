@@ -16,4 +16,4 @@ export function setAccessToken(token: string | null) {
   }
 
   delete http.defaults.headers.common.Authorization;
-}
+} 
