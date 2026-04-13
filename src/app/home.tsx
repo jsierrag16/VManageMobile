@@ -1,14 +1,4 @@
-import { typography } from "@/core/theme/typography";
-import BodegasScreen from "@/modules/existencias/bodegas/screens/BodegaScreen";
-import ProductosScreen from "@/modules/existencias/productos/screens/ProductosScreen";
-import ProfileScreen from "@/modules/profile/screens/ProfileScreen";
-import TrasladosScreen from "@/modules/existencias/traslados/screens/TrasladoScreen";
-import RolesScreen from "@/modules/configuracion/roles/screens/RolesScreen";
-import UsuariosScreen from "@/modules/usuarios/screens/UsuariosScreen";
-import ProveedoresScreen from "@/modules/compras/proveedores/screens/proveedoresScreen";
 import { Redirect, useRouter, type Href } from "expo-router";
-import OrdenesCompraScreen from "@/modules/compras/ordenes-compra/screens/ordenCompraScreen";
-import RemisionesCompraScreen from "@/modules/compras/remisiones-compra/screens/remisionCompraScreen";
 import { useState } from "react";
 import {
   SafeAreaView,
@@ -21,19 +11,29 @@ import {
 import AppHeader from "@/components/layout/AppHeader";
 import BottomNav from "@/components/layout/BottomNav";
 import AppCard from "@/components/ui/AppCard";
-import AppStatCard from "@/components/ui/AppStatCard";
 import BrandLoader from "@/components/ui/BrandLoader";
 
 import { setAccessToken } from "@/core/api/http";
-import { removeAccessToken } from "@/core/storage/session";
-import { useAuthStore } from "@/modules/auth/store/auth.store";
-import { useBodegaStore } from "@/modules/existencias/bodegas/store/bodega.store";
-
 import { colors } from "@/core/theme/colors";
+import { typography } from "@/core/theme/typography";
+import { removeAccessToken } from "@/core/storage/session";
+
+import { useAuthStore } from "@/modules/auth/store/auth.store";
+import RolesScreen from "@/modules/configuracion/roles/screens/RolesScreen";
+import OrdenesCompraScreen from "@/modules/compras/ordenes-compra/screens/ordenCompraScreen";
+import ProveedoresScreen from "@/modules/compras/proveedores/screens/proveedoresScreen";
+import RemisionesCompraScreen from "@/modules/compras/remisiones-compra/screens/remisionCompraScreen";
+import DashboardScreen from "@/modules/dashboard/screens/DashboardScreen";
+import BodegasScreen from "@/modules/existencias/bodegas/screens/BodegaScreen";
+import { useBodegaStore } from "@/modules/existencias/bodegas/store/bodega.store";
+import ProductosScreen from "@/modules/existencias/productos/screens/ProductosScreen";
+import TrasladosScreen from "@/modules/existencias/traslados/screens/TrasladoScreen";
 import type {
   AdminMacroModuleKey,
   AdminSubmoduleKey,
 } from "@/modules/navigation/config/admin-navigation";
+import ProfileScreen from "@/modules/profile/screens/ProfileScreen";
+import UsuariosScreen from "@/modules/usuarios/screens/UsuariosScreen";
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -43,7 +43,6 @@ export default function HomeScreen() {
   const selectedBodegaLabel = useBodegaStore(
     (state) => state.selectedBodegaLabel
   );
-  const selectedBodegaId = useBodegaStore((state) => state.selectedBodegaId);
 
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [currentMacro, setCurrentMacro] =
@@ -66,60 +65,6 @@ export default function HomeScreen() {
     router.replace("/" as Href);
   };
 
-  const renderDashboard = () => (
-    <>
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Dashboard</Text>
-        <Text style={styles.sectionSubtitle}>
-          Datos estadísticos de VetManage
-        </Text>
-      </View>
-
-      <View style={styles.grid}>
-        <View style={styles.gridItem}>
-          <AppStatCard
-            title="Total ventas"
-            value="$ 4.494.000"
-            trend="+18.5%"
-            accent="blue"
-          />
-        </View>
-        <View style={styles.gridItem}>
-          <AppStatCard
-            title="Clientes"
-            value="12"
-            trend="+12.3%"
-            accent="green"
-          />
-        </View>
-        <View style={styles.gridItem}>
-          <AppStatCard
-            title="Órdenes venta"
-            value="3"
-            trend="+7.8%"
-            accent="orange"
-          />
-        </View>
-        <View style={styles.gridItem}>
-          <AppStatCard
-            title="Productos"
-            value="15"
-            trend="+5.2%"
-            accent="purple"
-          />
-        </View>
-      </View>
-
-      <AppCard style={styles.summaryCard}>
-        <Text style={styles.summaryTitle}>Resumen actual</Text>
-        <Text style={styles.summaryText}>
-          Este home ya quedó alineado con la identidad de VManage. Ahora cada
-          macro módulo del menú inferior abrirá sus submódulos desde abajo.
-        </Text>
-      </AppCard>
-    </>
-  );
-
   const renderModulePlaceholder = (title: string, text: string) => (
     <>
       <View style={styles.sectionHeader}>
@@ -139,7 +84,7 @@ export default function HomeScreen() {
   const renderCurrentContent = () => {
     switch (currentSubmodule) {
       case "dashboard":
-        return renderDashboard();
+        return <DashboardScreen />;
 
       case "productos":
         return <ProductosScreen />;
@@ -153,7 +98,6 @@ export default function HomeScreen() {
       case "traslados":
         return <TrasladosScreen />;
 
-
       case "proveedores":
         return <ProveedoresScreen />;
 
@@ -161,7 +105,7 @@ export default function HomeScreen() {
         return <OrdenesCompraScreen />;
 
       case "remisiones_compra":
-        return <RemisionesCompraScreen />
+        return <RemisionesCompraScreen />;
 
       case "clientes":
         return renderModulePlaceholder(
@@ -200,7 +144,7 @@ export default function HomeScreen() {
         return <UsuariosScreen />;
 
       default:
-        return renderDashboard();
+        return <DashboardScreen />;
     }
   };
 
@@ -222,6 +166,7 @@ export default function HomeScreen() {
               setCurrentSubmodule("dashboard");
             }}
           />
+
           {renderCurrentContent()}
         </ScrollView>
 
@@ -279,18 +224,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: typography.fontFamily.medium,
   },
-  summaryTitle: {
-    color: colors.textPrimary,
-    fontSize: 18,
-    fontFamily: typography.fontFamily.extrabold,
-    marginBottom: 10,
-  },
-  summaryText: {
-    color: colors.textSecondary,
-    fontSize: 14,
-    lineHeight: 22,
-    fontFamily: typography.fontFamily.regular,
-  },
   moduleTitle: {
     color: colors.textPrimary,
     fontSize: 20,
@@ -302,19 +235,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 22,
     fontFamily: typography.fontFamily.regular,
-  },
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    marginHorizontal: -6,
-  },
-  gridItem: {
-    width: "50%",
-    paddingHorizontal: 6,
-    marginBottom: 12,
-  },
-  summaryCard: {
-    marginTop: 6,
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
