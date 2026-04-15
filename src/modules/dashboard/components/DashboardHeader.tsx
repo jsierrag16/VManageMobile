@@ -1,39 +1,107 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { useMemo, useState } from "react";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
 import AppCard from "@/components/ui/AppCard";
-import { colors } from "@/core/theme/colors";
-import { typography } from "@/core/theme/typography";
-import type { DashboardPeriodo } from "../types/dashboard.types";
 
 type Props = {
   selectedBodegaLabel?: string | null;
   periodoLabel?: string | null;
   totalBodegas?: number;
   selectedBodegaId?: number | null;
-  selectedPeriodo: DashboardPeriodo;
-  onPeriodoChange: (value: DashboardPeriodo) => void;
+  fechaInicio: string;
+  fechaFin: string;
+  onFechaInicioChange: (value: string) => void;
+  onFechaFinChange: (value: string) => void;
   onRefresh: () => void;
   refreshing?: boolean;
 };
 
-const PERIOD_OPTIONS: Array<{ value: DashboardPeriodo; label: string }> = [
-  { value: "30d", label: "30 días" },
-  { value: "3m", label: "3 meses" },
-  { value: "6m", label: "6 meses" },
-  { value: "12m", label: "12 meses" },
-];
+function formatDateInput(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function parseLocalDate(value: string) {
+  return new Date(`${value}T00:00:00`);
+}
+
+function formatDateLabel(value: string) {
+  const date = parseLocalDate(value);
+
+  return date.toLocaleDateString("es-CO", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
 
 export default function DashboardHeader({
   selectedBodegaLabel,
   periodoLabel,
   totalBodegas = 0,
   selectedBodegaId,
-  selectedPeriodo,
-  onPeriodoChange,
+  fechaInicio,
+  fechaFin,
+  onFechaInicioChange,
+  onFechaFinChange,
   onRefresh,
   refreshing = false,
 }: Props) {
+  const [showDesdePicker, setShowDesdePicker] = useState(false);
+  const [showHastaPicker, setShowHastaPicker] = useState(false);
+
+  const today = useMemo(() => new Date(), []);
+  const todayString = useMemo(() => formatDateInput(today), [today]);
+
+  const fechaInicioDate = useMemo(
+    () => parseLocalDate(fechaInicio),
+    [fechaInicio]
+  );
+  const fechaFinDate = useMemo(() => parseLocalDate(fechaFin), [fechaFin]);
+
+  const maxFechaInicioDate = useMemo(() => {
+    return fechaFin < todayString ? parseLocalDate(fechaFin) : today;
+  }, [fechaFin, todayString, today]);
+
+  const handleDesdeChange = (_event: any, selectedDate?: Date) => {
+    if (Platform.OS !== "ios") {
+      setShowDesdePicker(false);
+    }
+
+    if (!selectedDate) return;
+
+    const cappedDate =
+      selectedDate.getTime() > maxFechaInicioDate.getTime()
+        ? maxFechaInicioDate
+        : selectedDate;
+
+    onFechaInicioChange(formatDateInput(cappedDate));
+  };
+
+  const handleHastaChange = (_event: any, selectedDate?: Date) => {
+    if (Platform.OS !== "ios") {
+      setShowHastaPicker(false);
+    }
+
+    if (!selectedDate) return;
+
+    let nextDate = selectedDate;
+
+    if (nextDate.getTime() > today.getTime()) {
+      nextDate = today;
+    }
+
+    if (nextDate.getTime() < fechaInicioDate.getTime()) {
+      nextDate = fechaInicioDate;
+    }
+
+    onFechaFinChange(formatDateInput(nextDate));
+  };
+
   return (
     <AppCard style={styles.card}>
       <View style={styles.topRow}>
@@ -41,7 +109,7 @@ export default function DashboardHeader({
           <Text style={styles.title}>Dashboard</Text>
           <Text style={styles.subtitle}>
             Resumen ejecutivo, operativo y analítico del sistema según la bodega
-            seleccionada.
+            y el rango de fechas seleccionados.
           </Text>
         </View>
 
@@ -55,7 +123,7 @@ export default function DashboardHeader({
           <Ionicons
             name="refresh"
             size={16}
-            color={colors.primary}
+            color="#2563EB"
             style={styles.refreshIcon}
           />
           <Text style={styles.refreshText}>
@@ -89,35 +157,58 @@ export default function DashboardHeader({
         )}
       </View>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.periodRow}
-      >
-        {PERIOD_OPTIONS.map((option) => {
-          const active = option.value === selectedPeriodo;
+      <View style={styles.dateRow}>
+        <Pressable
+          onPress={() => setShowDesdePicker(true)}
+          style={({ pressed }) => [
+            styles.dateButton,
+            pressed && styles.dateButtonPressed,
+          ]}
+        >
+          <View style={styles.dateButtonHeader}>
+            <Ionicons name="calendar-outline" size={15} color="#2563EB" />
+            <Text style={styles.dateLabel}>Desde</Text>
+          </View>
 
-          return (
-            <Pressable
-              key={option.value}
-              onPress={() => onPeriodoChange(option.value)}
-              style={[
-                styles.periodChip,
-                active && styles.periodChipActive,
-              ]}
-            >
-              <Text
-                style={[
-                  styles.periodChipText,
-                  active && styles.periodChipTextActive,
-                ]}
-              >
-                {option.label}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
+          <Text style={styles.dateValue}>{formatDateLabel(fechaInicio)}</Text>
+        </Pressable>
+
+        <Pressable
+          onPress={() => setShowHastaPicker(true)}
+          style={({ pressed }) => [
+            styles.dateButton,
+            pressed && styles.dateButtonPressed,
+          ]}
+        >
+          <View style={styles.dateButtonHeader}>
+            <Ionicons name="calendar-outline" size={15} color="#2563EB" />
+            <Text style={styles.dateLabel}>Hasta</Text>
+          </View>
+
+          <Text style={styles.dateValue}>{formatDateLabel(fechaFin)}</Text>
+        </Pressable>
+      </View>
+
+      {showDesdePicker && (
+        <DateTimePicker
+          value={fechaInicioDate}
+          mode="date"
+          display={Platform.OS === "ios" ? "spinner" : "default"}
+          maximumDate={maxFechaInicioDate}
+          onChange={handleDesdeChange}
+        />
+      )}
+
+      {showHastaPicker && (
+        <DateTimePicker
+          value={fechaFinDate}
+          mode="date"
+          display={Platform.OS === "ios" ? "spinner" : "default"}
+          minimumDate={fechaInicioDate}
+          maximumDate={today}
+          onChange={handleHastaChange}
+        />
+      )}
     </AppCard>
   );
 }
@@ -127,103 +218,118 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   topRow: {
-    gap: 14,
-    marginBottom: 14,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 12,
   },
   textWrap: {
-    gap: 8,
+    flex: 1,
+    paddingRight: 8,
   },
   title: {
-    color: colors.textPrimary,
-    fontSize: 28,
-    fontFamily: typography.fontFamily.extrabold,
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#0F172A",
   },
   subtitle: {
-    color: colors.textSecondary,
-    fontSize: 14,
-    lineHeight: 22,
-    fontFamily: typography.fontFamily.medium,
+    fontSize: 13,
+    color: "#64748B",
+    marginTop: 6,
+    lineHeight: 20,
   },
   refreshButton: {
-    alignSelf: "flex-start",
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#EEF3FF",
     borderWidth: 1,
-    borderColor: "#D7E3FF",
-    borderRadius: 999,
-    paddingHorizontal: 14,
+    borderColor: "#E2E8F0",
+    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 12,
     paddingVertical: 10,
+    borderRadius: 12,
   },
   refreshButtonPressed: {
-    opacity: 0.85,
+    opacity: 0.72,
   },
   refreshIcon: {
-    marginRight: 8,
+    marginRight: 6,
   },
   refreshText: {
-    color: colors.primary,
     fontSize: 13,
-    fontFamily: typography.fontFamily.bold,
+    fontWeight: "600",
+    color: "#2563EB",
   },
   chipsWrap: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
-    marginBottom: 14,
+    marginTop: 14,
   },
   chip: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
     borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderWidth: 1,
   },
   chipPurple: {
-    backgroundColor: "#F3E8FF",
+    backgroundColor: "#F5F3FF",
+    borderColor: "#DDD6FE",
   },
   chipBlue: {
-    backgroundColor: "#EEF3FF",
+    backgroundColor: "#EFF6FF",
+    borderColor: "#BFDBFE",
   },
   chipGreen: {
-    backgroundColor: "#ECFDF3",
+    backgroundColor: "#ECFDF5",
+    borderColor: "#A7F3D0",
   },
   chipText: {
     fontSize: 12,
-    fontFamily: typography.fontFamily.bold,
+    fontWeight: "500",
   },
   chipTextPurple: {
     color: "#6D28D9",
   },
   chipTextBlue: {
-    color: "#2563EB",
+    color: "#1D4ED8",
   },
   chipTextGreen: {
-    color: "#059669",
+    color: "#047857",
   },
-  periodRow: {
+  dateRow: {
+    flexDirection: "row",
     gap: 10,
-    paddingRight: 6,
+    marginTop: 14,
   },
-  periodChip: {
-    borderRadius: 999,
+  dateButton: {
+    flex: 1,
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    borderColor: "#E2E8F0",
+    backgroundColor: "#F8FAFC",
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
   },
-  periodChipActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+  dateButtonPressed: {
+    opacity: 0.82,
   },
-  periodChipText: {
-    color: colors.textSecondary,
-    fontSize: 13,
-    fontFamily: typography.fontFamily.bold,
+  dateButtonHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 6,
   },
-  periodChipTextActive: {
-    color: "#FFFFFF",
+  dateLabel: {
+    fontSize: 12,
+    color: "#64748B",
+    fontWeight: "500",
+  },
+  dateValue: {
+    fontSize: 14,
+    color: "#0F172A",
+    fontWeight: "600",
   },
 });

@@ -31,8 +31,11 @@ export default function DashboardScreen() {
   const {
     selectedBodegaId,
     selectedBodegaLabel,
-    selectedPeriodo,
-    setSelectedPeriodo,
+    fechaInicio,
+    fechaFin,
+    setFechaInicio,
+    setFechaFin,
+    isDateRangeValid,
     resumen,
     seriesChartData,
     ventasPorCategoriaChartData,
@@ -50,9 +53,9 @@ export default function DashboardScreen() {
 
     return [
       {
-        title: "Ventas del mes",
+        title: "Ventas del período",
         value: formatMoney(resumen.ventas.total_mes_actual),
-        description: `Periodo actual: ${resumen.periodo.etiqueta}`,
+        description: resumen.periodo.etiqueta || "Rango seleccionado",
         icon: "cash-outline" as const,
         colors: ["#3B82F6", "#2563EB"] as [string, string],
       },
@@ -66,7 +69,7 @@ export default function DashboardScreen() {
         colors: ["#10B981", "#059669"] as [string, string],
       },
       {
-        title: "Compras del mes",
+        title: "Compras del período",
         value: formatMoney(resumen.compras.total_mes_actual),
         description: `${formatNumber(
           resumen.compras.ordenes_pendientes
@@ -108,7 +111,7 @@ export default function DashboardScreen() {
         title: "Remisiones por facturar",
         value: formatNumber(resumen.ventas.remisiones_pendientes_facturar),
         description: "Pendientes de asociar a una factura",
-        icon: "newspaper-outline" as const,
+        icon: "reader-outline" as const,
         tone: "purple" as const,
       },
       {
@@ -136,14 +139,14 @@ export default function DashboardScreen() {
         title: "Remisiones de compra pendientes",
         value: formatNumber(resumen.compras.remisiones_pendientes),
         description: "Pendientes por aplicar o gestionar",
-        icon: "document-outline" as const,
+        icon: "reader-outline" as const,
         tone: "blue" as const,
       },
       {
         title: "Proveedores activos",
         value: formatNumber(resumen.terceros.proveedores_activos),
         description: "Proveedores con actividad en las bodegas visibles",
-        icon: "car-outline" as const,
+        icon: "business-outline" as const,
         tone: "green" as const,
       },
     ];
@@ -166,14 +169,14 @@ export default function DashboardScreen() {
         description: `Stock menor a ${formatNumber(
           resumen.inventario.umbral_stock_bajo
         )}`,
-        icon: "alert-circle-outline" as const,
+        icon: "warning-outline" as const,
         tone: "red" as const,
       },
       {
         title: "Lotes por vencer",
         value: formatNumber(resumen.inventario.lotes_por_vencer),
         description: "Con vencimiento dentro de 30 días",
-        icon: "timer-outline" as const,
+        icon: "albums-outline" as const,
         tone: "yellow" as const,
       },
       {
@@ -201,26 +204,25 @@ export default function DashboardScreen() {
         title: "Proveedores activos",
         value: formatNumber(resumen.terceros.proveedores_activos),
         description: "Proveedores con compras registradas",
-        icon: "car-outline" as const,
+        icon: "business-outline" as const,
         tone: "blue" as const,
       },
     ];
   }, [resumen]);
 
-  const quickActions = useMemo(
-    () => [
-      { label: "Clientes" },
-      { label: "Cotizaciones" },
-      { label: "Órdenes venta" },
-      { label: "Remisiones venta" },
-      { label: "Pagos y abonos" },
-      { label: "Órdenes compra" },
-      { label: "Remisiones compra" },
-      { label: "Productos" },
-      { label: "Traslados" },
-    ],
-    []
-  );
+  const quickActions = useMemo(() => {
+    return [
+      { label: "Clientes", path: "/clientes" },
+      { label: "Cotizaciones", path: "/cotizaciones" },
+      { label: "Órdenes venta", path: "/ordenes-venta" },
+      { label: "Remisiones venta", path: "/remisiones-venta" },
+      { label: "Pagos y abonos", path: "/pagos-abonos" },
+      { label: "Órdenes compra", path: "/ordenes-compra" },
+      { label: "Remisiones compra", path: "/remisiones-compra" },
+      { label: "Productos", path: "/productos" },
+      { label: "Traslados", path: "/traslados" },
+    ];
+  }, []);
 
   const lineChartData = useMemo(() => {
     return {
@@ -308,11 +310,22 @@ export default function DashboardScreen() {
         periodoLabel={resumen?.periodo?.etiqueta}
         totalBodegas={resumen?.bodega?.total_bodegas ?? 0}
         selectedBodegaId={selectedBodegaId}
-        selectedPeriodo={selectedPeriodo}
-        onPeriodoChange={setSelectedPeriodo}
+        fechaInicio={fechaInicio}
+        fechaFin={fechaFin}
+        onFechaInicioChange={setFechaInicio}
+        onFechaFinChange={setFechaFin}
         onRefresh={refreshAll}
         refreshing={isRefreshing}
       />
+
+      {!isDateRangeValid ? (
+        <AppCard style={styles.errorBlock}>
+          <Text style={styles.errorTitle}>Rango de fechas inválido</Text>
+          <Text style={styles.errorText}>
+            La fecha inicial no puede ser mayor que la fecha final.
+          </Text>
+        </AppCard>
+      ) : null}
 
       <View style={styles.mainCardsWrap}>
         {mainCards.map((card) => (
@@ -331,7 +344,7 @@ export default function DashboardScreen() {
         <>
           <ChartCard
             title="Evolución de ventas y compras"
-            subtitle="Comportamiento comparativo del período seleccionado."
+            subtitle="Comportamiento comparativo del rango seleccionado."
           >
             {isWeb ? (
               <EmptyChart
@@ -344,7 +357,7 @@ export default function DashboardScreen() {
               </View>
             ) : seriesChartData.length === 0 ? (
               <EmptyChart
-                title="Sin datos en el período seleccionado"
+                title="Sin datos en el rango seleccionado"
                 subtitle="No hay ventas ni compras para construir la serie."
               />
             ) : (
@@ -365,7 +378,7 @@ export default function DashboardScreen() {
 
           <ChartCard
             title="Ventas por categoría"
-            subtitle="Top categorías de productos vendidas en el período."
+            subtitle="Top categorías de productos vendidas en el rango."
           >
             {isWeb ? (
               <EmptyChart
@@ -403,7 +416,7 @@ export default function DashboardScreen() {
 
           <ChartCard
             title="Compras por proveedor"
-            subtitle="Top proveedores por monto comprado en el período."
+            subtitle="Top proveedores por monto comprado en el rango."
           >
             {isWeb ? (
               <EmptyChart
@@ -543,4 +556,4 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     fontFamily: typography.fontFamily.regular,
   },
-}); 
+});

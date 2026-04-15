@@ -2,6 +2,7 @@ import { http } from "@/core/api/http";
 import type {
   DashboardChartParams,
   DashboardRankingResponse,
+  DashboardResumenParams,
   DashboardResumenResponse,
   DashboardSeriesResponse,
 } from "../types/dashboard.types";
@@ -68,7 +69,7 @@ const normalizeResumen = (raw: any): DashboardResumenResponse => {
 
 const normalizeSeries = (raw: any): DashboardSeriesResponse => {
   return {
-    periodo: String(raw?.periodo ?? "6m"),
+    periodo: String(raw?.periodo ?? ""),
     agrupacion: String(raw?.agrupacion ?? "mes"),
     labels: Array.isArray(raw?.labels)
       ? raw.labels.map((item: unknown) => String(item ?? ""))
@@ -84,7 +85,7 @@ const normalizeSeries = (raw: any): DashboardSeriesResponse => {
 
 const normalizeRanking = (raw: any): DashboardRankingResponse => {
   return {
-    periodo: String(raw?.periodo ?? "6m"),
+    periodo: String(raw?.periodo ?? ""),
     items: Array.isArray(raw?.items)
       ? raw.items.map((item: any) => ({
           label: String(item?.label ?? ""),
@@ -95,11 +96,17 @@ const normalizeRanking = (raw: any): DashboardRankingResponse => {
 };
 
 export const dashboardService = {
-  async getResumen(idBodega?: number | null): Promise<DashboardResumenResponse> {
+  async getResumen(
+    params: DashboardResumenParams = {}
+  ): Promise<DashboardResumenResponse> {
     const response = await http.get("/dashboard/resumen", {
       params: {
         id_bodega:
-          idBodega === null || idBodega === undefined ? undefined : idBodega,
+          params.idBodega === null || params.idBodega === undefined
+            ? undefined
+            : params.idBodega,
+        fecha_inicio: params.fechaInicio || undefined,
+        fecha_fin: params.fechaFin || undefined,
       },
     });
 
@@ -115,8 +122,9 @@ export const dashboardService = {
           params.idBodega === null || params.idBodega === undefined
             ? undefined
             : params.idBodega,
-        periodo: params.periodo ?? "6m",
-        agrupacion: params.agrupacion ?? "mes",
+        fecha_inicio: params.fechaInicio || undefined,
+        fecha_fin: params.fechaFin || undefined,
+        agrupacion: params.agrupacion || undefined,
       },
     });
 
@@ -132,7 +140,8 @@ export const dashboardService = {
           params.idBodega === null || params.idBodega === undefined
             ? undefined
             : params.idBodega,
-        periodo: params.periodo ?? "6m",
+        fecha_inicio: params.fechaInicio || undefined,
+        fecha_fin: params.fechaFin || undefined,
       },
     });
 
@@ -148,7 +157,8 @@ export const dashboardService = {
           params.idBodega === null || params.idBodega === undefined
             ? undefined
             : params.idBodega,
-        periodo: params.periodo ?? "6m",
+        fecha_inicio: params.fechaInicio || undefined,
+        fecha_fin: params.fechaFin || undefined,
       },
     });
 

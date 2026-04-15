@@ -1,4 +1,3 @@
-export type DashboardPeriodo = "30d" | "3m" | "6m" | "12m";
 export type DashboardAgrupacion = "dia" | "mes";
 
 export type DashboardResumenResponse = {
@@ -42,7 +41,7 @@ export type DashboardResumenResponse = {
 };
 
 export type DashboardSeriesResponse = {
-  periodo: DashboardPeriodo | string;
+  periodo: string;
   agrupacion: DashboardAgrupacion | string;
   labels: string[];
   ventas: number[];
@@ -55,12 +54,19 @@ export type DashboardRankingItem = {
 };
 
 export type DashboardRankingResponse = {
-  periodo: DashboardPeriodo | string;
+  periodo: string;
   items: DashboardRankingItem[];
+};
+
+export type DashboardResumenParams = {
+  idBodega?: number | null;
+  fechaInicio?: string;
+  fechaFin?: string;
 };
 
 export type DashboardChartParams = {
   idBodega?: number | null;
-  periodo?: DashboardPeriodo;
+  fechaInicio?: string;
+  fechaFin?: string;
   agrupacion?: DashboardAgrupacion;
 };

@@ -1,9 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import { useBodegaStore } from "@/modules/existencias/bodegas/store/bodega.store";
 import { dashboardService } from "../services/dashboard.service";
-import type { DashboardPeriodo } from "../types/dashboard.types";
 
 export function formatMoney(value?: number | string | null) {
   const numberValue = Number(value ?? 0);
@@ -25,39 +24,133 @@ export function formatNumber(value?: number | string | null) {
   });
 }
 
+function formatDateInput(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function parseLocalDate(value: string) {
+  return new Date(`${value}T00:00:00`);
+}
+
 export function useDashboard() {
   const selectedBodegaId = useBodegaStore((state) => state.selectedBodegaId);
   const selectedBodegaLabel = useBodegaStore(
     (state) => state.selectedBodegaLabel
   );
 
-  const [selectedPeriodo, setSelectedPeriodo] =
-    useState<DashboardPeriodo>("6m");
+  const today = useMemo(() => new Date(), []);
+  const todayString = useMemo(() => formatDateInput(today), [today]);
+
+  const currentMonthStart = useMemo(
+    () => new Date(today.getFullYear(), today.getMonth(), 1),
+    [today]
+  );
+
+  const [fechaInicio, setFechaInicioState] = useState(
+    formatDateInput(currentMonthStart)
+  );
+  const [fechaFin, setFechaFinState] = useState(todayString);
+
+  const isDateRangeValid = useMemo(() => {
+    if (!fechaInicio || !fechaFin) return false;
+    return fechaInicio <= fechaFin;
+  }, [fechaInicio, fechaFin]);
+
+  const fechaInicioDate = useMemo(
+    () => parseLocalDate(fechaInicio),
+    [fechaInicio]
+  );
+
+  const fechaFinDate = useMemo(() => parseLocalDate(fechaFin), [fechaFin]);
+
+  const maxFechaInicio = useMemo(() => {
+    return fechaFin < todayString ? fechaFin : todayString;
+  }, [fechaFin, todayString]);
+
+  const setFechaInicio = useCallback(
+    (value: string) => {
+      if (!value) return;
+
+      const nextValue = value > maxFechaInicio ? maxFechaInicio : value;
+      setFechaInicioState(nextValue);
+
+      if (fechaFin < nextValue) {
+        setFechaFinState(nextValue);
+      }
+    },
+    [fechaFin, maxFechaInicio]
+  );
+
+  const setFechaFin = useCallback(
+    (value: string) => {
+      if (!value) return;
+
+      let nextValue = value;
+
+      if (nextValue > todayString) {
+        nextValue = todayString;
+      }
+
+      if (nextValue < fechaInicio) {
+        nextValue = fechaInicio;
+      }
+
+      setFechaFinState(nextValue);
+    },
+    [fechaInicio, todayString]
+  );
+
+  const agrupacion = useMemo<"dia" | "mes">(() => {
+    const diffMs = fechaFinDate.getTime() - fechaInicioDate.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24)) + 1;
+    return diffDays <= 45 ? "dia" : "mes";
+  }, [fechaInicioDate, fechaFinDate]);
 
   const resumenQuery = useQuery({
-    queryKey: ["dashboard-resumen-mobile", selectedBodegaId],
-    queryFn: () => dashboardService.getResumen(selectedBodegaId),
+    queryKey: [
+      "dashboard-resumen-mobile",
+      selectedBodegaId,
+      fechaInicio,
+      fechaFin,
+    ],
+    queryFn: () =>
+      dashboardService.getResumen({
+        idBodega: selectedBodegaId,
+        fechaInicio,
+        fechaFin,
+      }),
+    enabled: isDateRangeValid,
   });
 
   const chartsQuery = useQuery({
-    queryKey: ["dashboard-charts-mobile", selectedBodegaId, selectedPeriodo],
+    queryKey: [
+      "dashboard-charts-mobile",
+      selectedBodegaId,
+      fechaInicio,
+      fechaFin,
+      agrupacion,
+    ],
     queryFn: async () => {
-      const agrupacion = selectedPeriodo === "30d" ? "dia" : "mes";
-
       const [series, ventasPorCategoria, comprasPorProveedor] =
         await Promise.all([
           dashboardService.getSeries({
             idBodega: selectedBodegaId,
-            periodo: selectedPeriodo,
+            fechaInicio,
+            fechaFin,
             agrupacion,
           }),
           dashboardService.getVentasPorCategoria({
             idBodega: selectedBodegaId,
-            periodo: selectedPeriodo,
+            fechaInicio,
+            fechaFin,
           }),
           dashboardService.getComprasPorProveedor({
             idBodega: selectedBodegaId,
-            periodo: selectedPeriodo,
+            fechaInicio,
+            fechaFin,
           }),
         ]);
 
@@ -67,9 +160,11 @@ export function useDashboard() {
         comprasPorProveedor,
       };
     },
+    enabled: isDateRangeValid,
   });
 
   const refreshAll = async () => {
+    if (!isDateRangeValid) return;
     await Promise.all([resumenQuery.refetch(), chartsQuery.refetch()]);
   };
 
@@ -95,8 +190,16 @@ export function useDashboard() {
   return {
     selectedBodegaId,
     selectedBodegaLabel,
-    selectedPeriodo,
-    setSelectedPeriodo,
+    fechaInicio,
+    fechaFin,
+    fechaInicioDate,
+    fechaFinDate,
+    todayString,
+    maxFechaInicio,
+    setFechaInicio,
+    setFechaFin,
+    agrupacion,
+    isDateRangeValid,
     resumen: resumenQuery.data ?? null,
     series: chartsQuery.data?.series ?? null,
     ventasPorCategoria: chartsQuery.data?.ventasPorCategoria ?? null,
