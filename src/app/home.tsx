@@ -28,6 +28,11 @@ import BodegasScreen from "@/modules/existencias/bodegas/screens/BodegaScreen";
 import { useBodegaStore } from "@/modules/existencias/bodegas/store/bodega.store";
 import ProductosScreen from "@/modules/existencias/productos/screens/ProductosScreen";
 import TrasladosScreen from "@/modules/existencias/traslados/screens/TrasladoScreen";
+import ClientesScreen from "@/modules/ventas/clientes/screens/ClientesScreen";
+import CotizacionesScreen from "@/modules/ventas/cotizaciones/screens/CotizacionesScreen";
+import OrdenesVentaScreen from "@/modules/ventas/ ordenes-venta/screens/OrdenesVentaScreen";
+import RemisionesVentaScreen from "@/modules/ventas/ remisiones-venta/screens/RemisionesVentaScreen";
+import PagosAbonosScreen from "@/modules/ventas/pagos-abonos/screens/PagosAbonosScreen";
 import type {
   AdminMacroModuleKey,
   AdminSubmoduleKey,
@@ -108,34 +113,19 @@ export default function HomeScreen() {
         return <RemisionesCompraScreen />;
 
       case "clientes":
-        return renderModulePlaceholder(
-          "Clientes",
-          "Aquí se mostrará el módulo de clientes en solo lectura."
-        );
+        return <ClientesScreen />;
 
       case "cotizaciones":
-        return renderModulePlaceholder(
-          "Cotizaciones",
-          "Aquí conectaremos el módulo de cotizaciones."
-        );
-
+        return <CotizacionesScreen />;
+        
       case "ordenes_venta":
-        return renderModulePlaceholder(
-          "Órdenes de venta",
-          "Aquí conectaremos el módulo de órdenes de venta."
-        );
-
+        return <OrdenesVentaScreen />;
+        
       case "remisiones_venta":
-        return renderModulePlaceholder(
-          "Remisiones de venta",
-          "Aquí conectaremos el módulo de remisiones de venta."
-        );
-
+        return <RemisionesVentaScreen />;
+        
       case "pagos":
-        return renderModulePlaceholder(
-          "Pagos",
-          "Aquí conectaremos el módulo de pagos."
-        );
+        return <PagosAbonosScreen />;
 
       case "roles":
         return <RolesScreen />;
