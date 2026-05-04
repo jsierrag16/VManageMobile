@@ -1,5 +1,5 @@
 import { Redirect, useRouter, type Href } from "expo-router";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   SafeAreaView,
   ScrollView,
@@ -30,13 +30,17 @@ import ProductosScreen from "@/modules/existencias/productos/screens/ProductosSc
 import TrasladosScreen from "@/modules/existencias/traslados/screens/TrasladoScreen";
 import ClientesScreen from "@/modules/ventas/clientes/screens/ClientesScreen";
 import CotizacionesScreen from "@/modules/ventas/cotizaciones/screens/CotizacionesScreen";
-import OrdenesVentaScreen from "@/modules/ventas/ ordenes-venta/screens/OrdenesVentaScreen";
-import RemisionesVentaScreen from "@/modules/ventas/ remisiones-venta/screens/RemisionesVentaScreen";
+import OrdenesVentaScreen from "@/modules/ventas/ordenes-venta/screens/OrdenesVentaScreen";
+import RemisionesVentaScreen from "@/modules/ventas/remisiones-venta/screens/RemisionesVentaScreen";
 import PagosAbonosScreen from "@/modules/ventas/pagos-abonos/screens/PagosAbonosScreen";
 import type {
   AdminMacroModuleKey,
   AdminSubmoduleKey,
 } from "@/modules/navigation/config/admin-navigation";
+import {
+  canAccessSubmodule,
+  getDefaultNavigationForUser,
+} from "@/modules/navigation/utils/permissions";
 import ProfileScreen from "@/modules/profile/screens/ProfileScreen";
 import UsuariosScreen from "@/modules/usuarios/screens/UsuariosScreen";
 
@@ -55,6 +59,20 @@ export default function HomeScreen() {
   const [currentSubmodule, setCurrentSubmodule] =
     useState<AdminSubmoduleKey>("dashboard");
 
+  const defaultNavigation = useMemo(
+    () => getDefaultNavigationForUser(usuario),
+    [usuario]
+  );
+
+  useEffect(() => {
+    if (!usuario) return;
+
+    if (!canAccessSubmodule(usuario, currentSubmodule)) {
+      setCurrentMacro(defaultNavigation.macro);
+      setCurrentSubmodule(defaultNavigation.submodule);
+    }
+  }, [usuario, currentSubmodule, defaultNavigation]);
+
   if (!usuario) {
     return <Redirect href={"/" as Href} />;
   }
@@ -70,23 +88,31 @@ export default function HomeScreen() {
     router.replace("/" as Href);
   };
 
-  const renderModulePlaceholder = (title: string, text: string) => (
+  const renderNoAccess = () => (
     <>
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>{title}</Text>
+        <Text style={styles.sectionTitle}>Sin acceso</Text>
         <Text style={styles.sectionSubtitle}>
           Contexto: {selectedBodegaLabel}
         </Text>
       </View>
 
       <AppCard>
-        <Text style={styles.moduleTitle}>{title}</Text>
-        <Text style={styles.moduleText}>{text}</Text>
+        <Text style={styles.moduleTitle}>No tienes permiso para este módulo</Text>
+        <Text style={styles.moduleText}>
+          Tu menú se construye automáticamente con los permisos del rol. Si
+          necesitas acceso a otro módulo, debe asignarse desde la versión
+          administrativa.
+        </Text>
       </AppCard>
     </>
   );
 
   const renderCurrentContent = () => {
+    if (!canAccessSubmodule(usuario, currentSubmodule)) {
+      return renderNoAccess();
+    }
+
     switch (currentSubmodule) {
       case "dashboard":
         return <DashboardScreen />;
@@ -117,13 +143,13 @@ export default function HomeScreen() {
 
       case "cotizaciones":
         return <CotizacionesScreen />;
-        
+
       case "ordenes_venta":
         return <OrdenesVentaScreen />;
-        
+
       case "remisiones_venta":
         return <RemisionesVentaScreen />;
-        
+
       case "pagos":
         return <PagosAbonosScreen />;
 
@@ -134,7 +160,15 @@ export default function HomeScreen() {
         return <UsuariosScreen />;
 
       default:
-        return <DashboardScreen />;
+        return canAccessSubmodule(usuario, defaultNavigation.submodule) ? (
+          defaultNavigation.submodule === "dashboard" ? (
+            <DashboardScreen />
+          ) : (
+            renderNoAccess()
+          )
+        ) : (
+          <ProfileScreen />
+        );
     }
   };
 
@@ -152,8 +186,8 @@ export default function HomeScreen() {
               setCurrentSubmodule("perfil");
             }}
             onGoHome={() => {
-              setCurrentMacro("dashboard");
-              setCurrentSubmodule("dashboard");
+              setCurrentMacro(defaultNavigation.macro);
+              setCurrentSubmodule(defaultNavigation.submodule);
             }}
           />
 
@@ -164,13 +198,14 @@ export default function HomeScreen() {
           currentMacro={currentMacro}
           currentSubmodule={currentSubmodule}
           onSelectDashboard={() => {
-            setCurrentMacro("dashboard");
-            setCurrentSubmodule("dashboard");
+            setCurrentMacro(defaultNavigation.macro);
+            setCurrentSubmodule(defaultNavigation.submodule);
           }}
           onOpenMacro={(macro) => {
             setCurrentMacro(macro);
           }}
           onSelectSubmodule={(macro, submodule) => {
+            if (!canAccessSubmodule(usuario, submodule)) return;
             setCurrentMacro(macro);
             setCurrentSubmodule(submodule);
           }}

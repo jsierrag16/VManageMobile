@@ -1,22 +1,19 @@
-import { useState } from "react";
-import {
-  Modal,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { useMemo, useState } from "react";
+import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import { colors } from "@/core/theme/colors";
 import { radius } from "@/core/theme/radius";
 import { shadows } from "@/core/theme/shadows";
 import {
-  adminMacroModules,
-  adminSubmodulesByMacro,
   type AdminMacroModuleKey,
   type AdminSubmoduleKey,
 } from "@/modules/navigation/config/admin-navigation";
+import { useAuthStore } from "@/modules/auth/store/auth.store";
+import {
+  getVisibleMacros,
+  getVisibleSubmodulesByMacro,
+} from "@/modules/navigation/utils/permissions";
 
 type BottomNavProps = {
   currentMacro: AdminMacroModuleKey;
@@ -36,19 +33,31 @@ export default function BottomNav({
   onOpenMacro,
   onSelectSubmodule,
 }: BottomNavProps) {
+  const usuario = useAuthStore((state) => state.usuario);
   const [openedMacro, setOpenedMacro] = useState<AdminMacroModuleKey | null>(
     null
   );
 
+  const visibleMacros = useMemo(() => getVisibleMacros(usuario), [usuario]);
+
+  const visibleSubmodulesByMacro = useMemo(
+    () => getVisibleSubmodulesByMacro(usuario),
+    [usuario]
+  );
+
   const currentOptions = openedMacro
-    ? adminSubmodulesByMacro[openedMacro]
+    ? visibleSubmodulesByMacro[openedMacro] ?? []
     : [];
+
+  if (!visibleMacros.length) {
+    return null;
+  }
 
   return (
     <>
       <View style={styles.wrapper}>
         <View style={styles.container}>
-          {adminMacroModules.map((item) => {
+          {visibleMacros.map((item) => {
             const active = currentMacro === item.key;
 
             return (
@@ -56,7 +65,13 @@ export default function BottomNav({
                 key={item.key}
                 style={styles.item}
                 onPress={() => {
-                  if (item.key === "dashboard") {
+                  const options = visibleSubmodulesByMacro[item.key] ?? [];
+                  if (!options.length) return;
+
+                  if (
+                    item.key === "dashboard" &&
+                    options.some((option) => option.key === "dashboard")
+                  ) {
                     onSelectDashboard();
                     return;
                   }
@@ -97,9 +112,7 @@ export default function BottomNav({
             <View style={styles.handle} />
 
             <Text style={styles.sheetTitle}>
-              {openedMacro
-                ? adminMacroModules.find((m) => m.key === openedMacro)?.label
-                : ""}
+              {visibleMacros.find((m) => m.key === openedMacro)?.label ?? ""}
             </Text>
 
             {currentOptions.map((item) => {
@@ -138,7 +151,7 @@ export default function BottomNav({
                       >
                         {item.label}
                       </Text>
-                      <Text style={styles.moduleSubtitle}>Solo lectura</Text>
+                      <Text style={styles.moduleSubtitle}>Acceso autorizado</Text>
                     </View>
                   </View>
 
@@ -227,32 +240,31 @@ const styles = StyleSheet.create({
   },
   sheetTitle: {
     color: colors.textPrimary,
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "800",
-    textAlign: "center",
     marginBottom: 14,
   },
   moduleButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 16,
+    paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: colors.borderSoft,
+    borderBottomColor: colors.border,
   },
   moduleLeft: {
     flexDirection: "row",
     alignItems: "center",
+    gap: 12,
     flex: 1,
   },
   moduleIconWrap: {
-    width: 42,
-    height: 42,
-    borderRadius: radius.full,
-    backgroundColor: colors.backgroundSoft,
+    width: 38,
+    height: 38,
+    borderRadius: radius.lg,
+    backgroundColor: colors.surfaceMuted,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 12,
   },
   moduleIconWrapActive: {
     backgroundColor: colors.primarySoft,
@@ -269,8 +281,8 @@ const styles = StyleSheet.create({
     color: colors.primary,
   },
   moduleSubtitle: {
-    color: colors.textMuted,
+    color: colors.textSecondary,
     fontSize: 12,
-    marginTop: 4,
+    marginTop: 2,
   },
 });
